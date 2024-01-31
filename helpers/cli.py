@@ -39,25 +39,25 @@ def parse_args():
                          help='Columns to plot')
     
     parser.add_argument('--plot_type', dest='plot_type', type=str, metavar='', required=False,
-                         choices=('shotchart', 'bar', 'pie', 'line'),
+                         choices=('shotchart', 'double-bar', 'bar', 'pie', 'line'),
                          help="Plot Type")
 
     parser.add_argument('--zones', dest='zones', action='store_true', required=False,
                          help='Include Zones') 
 
-    parser.add_argument('--shot_points', dest='shot_points', action='store_true', required=False,
+    parser.add_argument('--points', dest='points', action='store_true', required=False,
                          help='')
 
-    parser.add_argument('--shot_types', dest='shot_types', action='store_true', required=False,
+    parser.add_argument('--types', dest='types', action='store_true', required=False,
                          help='')
 
-    parser.add_argument('--shot_breakdown', dest='shot_breakdown', action='store_true', required=False,
+    parser.add_argument('--breakdown', dest='breakdown', action='store_true', required=False,
                          help='')
 
-    parser.add_argument('--shot_distances', dest='shot_distances', action='store_true', required=False,
+    parser.add_argument('--distances', dest='distances', action='store_true', required=False,
                          help='') 
 
-    parser.add_argument('--shot_periods', dest='shot_periods', action='store_true', required=False,
+    parser.add_argument('--periods', dest='periods', action='store_true', required=False,
                          help='') 
 
     return parser.parse_args()

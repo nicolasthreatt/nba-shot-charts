@@ -10,24 +10,20 @@ from enums.court_dimensions import CourtDimensions
 
 class ShotChart:
     """A class representing a shot chart with various statistics and breakdowns."""
-    def __init__(self, shotchart_df: pd.DataFrame = None, zones: bool = None, points: bool = None, shot_type: bool = None, 
-                 shot_distances: bool = None, shot_periods: bool = None, shot_breakdown: bool = None):
+    def __init__(self, shotchart_df: pd.DataFrame = None):
         """Initialize a ShotChart object.
 
         Args:
             shotchart_df (pd.DataFrame, optional): DataFrame containing shot chart data.
-            zones (bool, optional): Whether to process shots by zones.
-            points (bool, optional): Whether to process shots by points.
-            shot_type (bool, optional): Whether to process shots by type.
-            shot_distances (bool, optional): Whether to process shots by distance.
-            shot_periods (bool, optional): Whether to process shots by period.
-            shot_breakdown (bool, optional): Whether to process shots by breakdown.
         """
+        self.df = shotchart_df
+
+        # Create Dictionary Keys
         field_goal_keys = ["made", "missed", "attempted", "percent", "frequency"]
 
         # Shot Points ShotChart Members
-        self.shots_missed = {}
-        self.shots_made = {}
+        self.shots_missed = dict.fromkeys(field_goal_keys, 0)
+        self.shots_made = dict.fromkeys(field_goal_keys, 0)
         self.two_points = dict.fromkeys(field_goal_keys, 0)
         self.three_points = dict.fromkeys(field_goal_keys, 0)
         self.total_points = dict.fromkeys(field_goal_keys, 0)
@@ -48,76 +44,77 @@ class ShotChart:
         self.top_of_key_3 = dict.fromkeys(field_goal_keys, 0)
         self.straight_deep_3 = dict.fromkeys(field_goal_keys, 0)
 
-        # Shot Type ShotChart Member
-        self.shot_types = {}
+        # Initialize shot chart member dictionaries
+        self.shot_chart_data = {
+            "points": {},
+            "types": {},
+            "breakdowns": {},
+            "distances": OrderedDict.fromkeys(["0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30", "30+"], 0),
+            "periods": OrderedDict.fromkeys([1, 2, 3, 4], 0)
+        }
 
-        # Shot Type ShotChart Member
-        self.shot_breakdowns = {}
+    def process(self, zones: bool = False, points: bool = None, shot_type: bool = None, 
+                shot_distances: bool = None, shot_periods: bool = None, shot_breakdown: bool = None):
+        """
 
-        # Shot Distances ShotChart Members
-        distances = ["0 - 5", "5 - 10", "10 - 15", "15 - 20", "20 - 25", "25 - 30", "30+"]
-        self.shot_distances = OrderedDict.fromkeys(distances, 0)
 
-        # Periods ShotChart Member
-        periods = [1, 2, 3, 4] # TODO: OVERTIME
-        self.shot_periods = OrderedDict.fromkeys(periods, 0)
-
-        if isinstance(shotchart_df, pd.DataFrame) and not shotchart_df.empty:
-
+        Args:
+            zones (bool, optional): Whether to process shots by zones.
+            points (bool, optional): Whether to process shots by points.
+            shot_type (bool, optional): Whether to process shots by type.
+            shot_distances (bool, optional): Whether to process shots by distance.
+            shot_periods (bool, optional): Whether to process shots by period.
+            shot_breakdown (bool, optional): Whether to process shots by breakdown.
+        """
+        if isinstance(self.df, pd.DataFrame) and not self.df.empty:
             # Game Date
-            self.game_date = datetime.strptime(str(shotchart_df.iloc[0]['GAME_DATE']),'%Y%m%d')
+            self.game_date = datetime.strptime(str(self.df.iloc[0]['GAME_DATE']), '%Y%m%d')
 
             # Process shot statistics if corresponding flags are True
             if points:
-                self.process_shots_by_points(shotchart_df)
+                self.process_shots_by_points(self.shot_chart_data["points"])
             if zones:
-                self.process_shots_by_zones(shotchart_df)
+                self.process_shots_by_zones()
             if shot_type:
-                self.process_shots_by_type(shotchart_df)
+                self.process_shots_by_type(self.shot_chart_data["types"])
             if shot_distances:
-                self.process_shots_by_distance(shotchart_df)
+                self.process_shots_by_distance(self.shot_chart_data["distances"])
             if shot_periods:
-                self.process_shots_by_period(shotchart_df)
+                self.process_shots_by_period(self.shot_chart_data["periods"])
             if shot_breakdown:
-                self.process_shots_by_breakdown(shotchart_df)
+                self.process_shots_by_breakdown(self.shot_chart_data["breakdowns"])
 
-    def process_shots_by_points(self, shotchart_df: pd.DataFrame) -> None:
-        """Process shot statistics by points based on the provided DataFrame.
+    def process_shots_by_points(self, points_dict) -> dict:
+        """Process shot statistics by points based on the provided DataFrame."""
+        for index, row in self.df.iterrows():
+            # Determine shot type (2-point vs 3-point)
+            shot_type = "2PT" if row["SHOT_TYPE"] == "2PT Field Goal" else "3PT"
 
-        Args:
-            shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
-        """
-        # Missed and made datasets
-        self.shots_missed = shotchart_df.loc[shotchart_df['SHOT_MADE_FLAG'] == 1]
-        self.shots_made = shotchart_df.loc[shotchart_df['SHOT_MADE_FLAG'] == 0]
+            # Initialize shot statistics for the current shot type if not already present in the dictionary.
+            if shot_type not in points_dict:
+                keys = ["made", "missed", "attempted", "percent", "frequency"]
+                points_dict[shot_type] = dict.fromkeys(keys, 0)
 
-        # 2pt Attempted, Made, Percentage datasets
-        if "2PT Field Goal" in shotchart_df["SHOT_TYPE"].unique():
-            self.two_points["made"] = shotchart_df.groupby('SHOT_TYPE')['SHOT_MADE_FLAG'].sum()[0]
-            self.two_points["attempted"] = shotchart_df.groupby('SHOT_TYPE')['SHOT_ATTEMPTED_FLAG'].sum()[0]
-            self.two_points["percent"] = self.two_points["made"] / self.two_points["attempted"] 
+            # Collect made vs. missed shots
+            event_type = row["EVENT_TYPE"]
+            if event_type == "Made Shot":
+                points_dict[shot_type]["made"] += 1
+            elif event_type == "Missed Shot":
+                points_dict[shot_type]["missed"] += 1
 
-        # 3pt Attempted, Made, Percentage datasets
-        if "3PT Field Goal" in shotchart_df["SHOT_TYPE"].unique():
-            self.three_points["made"] = shotchart_df.groupby('SHOT_TYPE')['SHOT_MADE_FLAG'].sum()[1]
-            self.three_points["attempted"] = shotchart_df.groupby('SHOT_TYPE')['SHOT_ATTEMPTED_FLAG'].sum()[1]
-            self.three_points["percent"] = self.three_points["made"] / self.three_points["attempted"]
+            # Record attempted shots and shooting percentage
+            points_dict[shot_type]["attempted"] = points_dict[shot_type]["made"] + points_dict[shot_type]["missed"]
+            points_dict[shot_type]["percent"] = points_dict[shot_type]["made"] / points_dict[shot_type]["attempted"]
 
-        # Total Attempted, Made, Percentage datasets
-        self.total_points["made"] = shotchart_df['SHOT_MADE_FLAG'].sum()
-        self.total_points["attempted"] = shotchart_df['SHOT_ATTEMPTED_FLAG'].sum()
-        self.total_points["percent"] = self.total_points["made"] / self.total_points["attempted"]
+            # Calculate frequency of points
+            total_attempted = self.df['SHOT_ATTEMPTED_FLAG'].sum()
+            points_dict[shot_type]["frequency"] = points_dict[shot_type]["attempted"] / total_attempted
 
-        # Frequency of Points
-        self.two_points["frequency"] = self.two_points["attempted"] / self.total_points["attempted"]
-        self.three_points["frequency"] = self.three_points["attempted"] / self.total_points["attempted"]
+        return points_dict
 
-    def process_shots_by_zones(self, shotchart: pd.DataFrame) -> None:
-        """Process shot statistics by different zones on the basketball court based on the provided DataFrame.
 
-        Args:
-            shotchart (pd.DataFrame): DataFrame containing shot chart data.
-        """
+    def process_shots_by_zones(self) -> None:
+        """Process shot statistics by different zones on the basketball court based on the provided DataFrame."""
         # Iterate through all shots
         for index, row in shotchart.iterrows():
             key = "made" if "Made" in row.EVENT_TYPE else "missed"
@@ -225,99 +222,86 @@ class ShotChart:
                 self.left_deep_3["attempted"] = self.left_deep_3["made"] +  self.left_deep_3["missed"]
                 self.left_deep_3["percent"] = self.left_deep_3["made"] / self.left_deep_3["attempted"]
 
-    def process_shots_by_type(self, shotchart_df: pd.DataFrame) -> dict:
+    def process_shots_by_type(self, types_dict):
         """Process shot statistics by shot type (2-point vs 3-point) based on the provided DataFrame.
-
-        Args:
-            shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
 
         Returns:
             dict: A dictionary containing shot statistics categorized by shot type.
         """
         # Initialize shot type statistics dictionary
-        self.process_shots_by_mode(self.shot_types, shotchart_df[["SHOT_TYPE", "EVENT_TYPE", "ACTION_TYPE"]], mode="type")
+        self.process_shots_by_mode(self.shot_types, self.df[["SHOT_TYPE", "EVENT_TYPE", "ACTION_TYPE"]], mode="type")
 
         # Calculate total shots attempted
-        total_shots = shotchart_df['SHOT_ATTEMPTED_FLAG'].sum()
+        total_shots = self.df['SHOT_ATTEMPTED_FLAG'].sum()
 
         # Calculate frequency of each shot type
-        self.process_column_frequency(self.shot_types, total_shots)
+        self.process_column_frequency(self.types_dict, total_shots)
 
-        return self.shot_types
+        # return self.shot_types
 
-    def process_shots_by_breakdown(self, shotchart_df: pd.DataFrame) -> dict:
+    def process_shots_by_breakdown(self, breakdowns_dict) -> dict:
         """Process shot statistics by detailed breakdown (e.g., jump shot, layup, dunk) based on the provided DataFrame.
-
-        Args:
-            shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
 
         Returns:
             dict: A dictionary containing shot statistics categorized by detailed shot breakdown.
         """
         # Initialize shot breakdown statistics dictionary
-        self.process_shots_by_mode(self.shot_breakdowns, shotchart_df[["SHOT_TYPE", "EVENT_TYPE", "ACTION_TYPE"]], mode="breakdown")
+        self.process_shots_by_mode(breakdowns_dict, self.df[["SHOT_TYPE", "EVENT_TYPE", "ACTION_TYPE"]], mode="breakdown")
 
         # Calculate total shots attempted
-        total_shots = shotchart_df['SHOT_ATTEMPTED_FLAG'].sum()
+        total_shots = self.df['SHOT_ATTEMPTED_FLAG'].sum()
 
         # Calculate frequency of each detailed shot breakdown
-        self.process_column_frequency(self.shot_breakdowns, total_shots)
+        self.process_column_frequency(breakdowns_dict, total_shots)
 
-        return self.shot_types
+        # return self.shot_types
 
-    def process_shots_by_distance(self, shotchart_df: pd.DataFrame) -> OrderedDict:
+    def process_shots_by_distance(self, distances_dict) -> OrderedDict:
         """Process shot statistics by shot distance based on the provided DataFrame.
-
-        Args:
-            shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
 
         Returns:
             OrderedDict: An ordered dictionary containing shot statistics categorized by shot distance.
         """
         # Initialize shot distance statistics ordered dictionary
-        self.process_shots_by_mode(self.shot_distances, shotchart_df[["SHOT_DISTANCE", "EVENT_TYPE"]], mode="distance")
+        self.process_shots_by_mode(distances_dict, self.df[["SHOT_DISTANCE", "EVENT_TYPE"]], mode="distance")
 
         # Calculate total shots attempted
-        total_shots = shotchart_df['SHOT_ATTEMPTED_FLAG'].sum()
+        total_shots = self.df['SHOT_ATTEMPTED_FLAG'].sum()
 
         # Calculate frequency of each shot distance
-        self.process_column_frequency(self.shot_distances, total_shots)
+        self.process_column_frequency(distances_dict, total_shots)
 
-        return self.shot_distances
+        # return self.shot_distances
 
-    def process_shots_by_period(self, shotchart_df: pd.DataFrame) -> OrderedDict:
+    def process_shots_by_period(self, periods_dict) -> OrderedDict:
         """Process shot statistics by period (e.g., quarter) based on the provided DataFrame.
-
-        Args:
-            shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
 
         Returns:
             OrderedDict: An ordered dictionary containing shot statistics categorized by period.
         """
         # Initialize period-based shot statistics ordered dictionary
-        self.process_shots_by_mode(self.shot_periods, shotchart_df[["PERIOD", "EVENT_TYPE"]], mode="period")
+        self.process_shots_by_mode(periods_dict, self.df[["PERIOD", "EVENT_TYPE"]], mode="period")
 
         # Calculate total shots attempted
-        total_shots = shotchart_df['SHOT_ATTEMPTED_FLAG'].sum()
+        total_shots = self.df['SHOT_ATTEMPTED_FLAG'].sum()
 
         # Calculate frequency of shots attempted in each period
-        self.process_column_frequency(self.shot_periods, total_shots)
+        self.process_column_frequency(periods_dict, total_shots)
 
-        return self.shot_periods
+        # return self.shot_periods
 
 
-    def process_shots_by_mode(self, shots_dict: dict, shotchart_df: pd.DataFrame, mode: str):
+    def process_shots_by_mode(self, shots_dict: dict, mode: str):
         """Process shot statistics based on the specified mode and update the provided dictionary.
 
         Args:
             shots_dict (dict): A dictionary containing shot type statistics to be updated.
-            shotchart_df (pd.DataFrame): A DataFrame containing shot chart data.
             mode (str): The mode of processing the shot statistics. Possible values are:
                 - "type": Shot type (2-point vs 3-point).
                 - "distance": Shot distance.
                 - "breakdown": Detailed shot type breakdown.
         """
-        for index, row in shotchart_df.iterrows():
+        for index, row in self.df.iterrows():
             if mode == "type":  # Shot Type (2Pt vs 3Pt)
                 shot_type, event_type, action_type = row[:3]
                 if "Layup" in action_type:

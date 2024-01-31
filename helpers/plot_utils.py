@@ -9,35 +9,75 @@ from matplotlib.patches import Circle, Rectangle, Arc
 from plots import determine_plot
 
 
-def generate_title(shotchart_df: pd.DataFrame, args: argparse.Namespace) -> str:
+def get_xlabel(args: argparse.Namespace) -> str:
+    """Get the label for the x-axis based on user-specified arguments.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+
+    Returns:
+        str: The label for the x-axis.
+    """
+    if args.points:
+        return "Shot Points"
+    if args.types:
+        return "Shot Types"
+    elif args.distances:
+        return "Shot Distance (Feet)"
+    elif args.periods:
+        return "Shot Period"
+    elif args.breakdown:
+        return "Shot Breakdowns"
+    else:
+        return None
+
+
+def get_ylabel(args: argparse.Namespace) -> str:
+    """Get the label for the y-axis based on user-specified arguments.
+
+    Args:
+        args (argparse.Namespace): Command-line arguments.
+
+    Returns:
+        str: The label for the y-axis.
+    """
+    if args.plot_data == "frequency":
+        return "Frequency"
+    else:
+        return "Number of Shots"
+
+
+def generate_title(shotchart: ShotChart, args: argparse.Namespace) -> str:
     """Generate a title for the shot chart based on the DataFrame and arguments.
 
     Args:
-        shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
+        shotchart (pd.DataFrame): DataFrame containing shot chart data.
         args (argparse.Namespace): Arguments controlling the generation of the title.
 
     Returns:
         str: The generated title.
     """
     title = args.player + ' - ' + (args.team_abr or args.team_nickname)
-    if 'GAME_DATE' in shotchart_df.columns:
-        game_date = datetime.strptime(str(shotchart_df.iloc[0]['GAME_DATE']), '%Y%m%d')
+    if 'GAME_DATE' in shotchart.df.columns:
+        game_date = datetime.strptime(str(shotchart.df.iloc[0]['GAME_DATE']), '%Y%m%d')
         title += ' - ' + game_date.strftime('%m/%d/%Y')
     return title
 
 
-def display_shot_data(shotchart_df: pd.DataFrame, processed_data, args: argparse.Namespace):
+def display_shot_data(shotchart: ShotChart, args: argparse.Namespace):
     """Display shot data using processed data.
 
     Args:
-        shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
-        processed_data: Processed data to be displayed.
+        shotchart (ShotChart): DataFrame containing shot chart data.
         args: Arguments controlling the display.
     """
-    if shotchart_df is not None:
-        # title = generate_title(shotchart_df, args)
-        determine_plot(shotchart_df, args.plot_type, plot_data=args.plot_data,
-                       title="TITLE") # , xlabel=get_xlabel(args), ylabel=get_ylabel(args)
+    if shotchart:
+        title = generate_title(shotchart, args)
+        x_label = get_xlabel(args)
+        y_label = get_ylabel(args)
+        # print(shotchart.shot_chart_data[x_label.split(' ')[1].lower()])
+        determine_plot(shotchart.shot_chart_data[x_label.split(' ')[1].lower()], args.plot_type, plot_data=args.plot_data,
+                       title=title, xlabel=x_label, ylabel=y_label)
     else:
         exit("No data to display.")
 

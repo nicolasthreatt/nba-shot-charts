@@ -8,8 +8,8 @@ from nba_api.stats.static import players, teams
 CURRENT_SEASON = "2020-21"
 
 
-def create_shotchart_df(season: str, season_type: str, game_date: str, team: dict, player: dict) -> pd.DataFrame:
-    """Create a DataFrame containing shot chart data for a specific player or team.
+def fetch_shotchart_data(season: str, season_type: str, game_date: str, team: dict, player: dict) -> pd.DataFrame:
+    """Fetch shot chart data for a specific player or team and create a DataFrame.
 
     Args:
         season (str): The season in which the game was played.
@@ -40,12 +40,14 @@ def create_shotchart_df(season: str, season_type: str, game_date: str, team: dic
                                                          context_measure_simple='FGA',
                                                          date_from_nullable=game_date)
 
-    # Convert ShotChartDetail Endpoint to Dataframe
+    # Convert ShotChartDetail Endpoint to DataFrame
     endpoint_df = shotchart_endpoint.get_data_frames()[0]
 
-    # Return the dataframe shotchart endpoint if found. Else, exit.
+    # Concatenate endpoint_df with shotchart_df
+    shotchart_df = pd.concat([shotchart_df, endpoint_df], ignore_index=True)
+
+    # Return the DataFrame shotchart endpoint if found. Else, exit.
     if not endpoint_df.empty:
-        shotchart_df = shotchart_df.append(endpoint_df)
         return shotchart_df
     else:
         exit("No shot chart found for {} on {}.".format(team['full_name'], game_date))
@@ -163,25 +165,24 @@ def get_game_date() -> str:
     return yesterday_str
 
 
-def process_shot_data(shotchart: ShotChart, shotchart_df: pd.DataFrame, args: argparse.Namespace):
+def process_shot_data(shotchart: ShotChart, args: argparse.Namespace):
     """Process shot data based on the provided ShotChart object, DataFrame, and arguments.
 
     Args:
         shotchart (ShotChart): An instance of the ShotChart class.
-        shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
         args (argparse.Namespace): Arguments controlling the processing (from argparse).
     """
-    if args.shot_points:
-        return shotchart.process_shots_by_points(shotchart_df)
-    elif args.shot_types:
-        return shotchart.process_shots_by_type(shotchart_df)
-    elif args.shot_distances:
-        return shotchart.process_shots_by_distance(shotchart_df)
-    elif args.shot_periods:
-        return shotchart.process_shots_by_period(shotchart_df)
-    elif args.shot_breakdown:
-        return shotchart.process_shots_by_breakdown(shotchart_df)
+    if args.points:
+        return shotchart.process_shots_by_points()
+    elif args.types:
+        return shotchart.process_shots_by_type()
+    elif args.distances:
+        return shotchart.process_shots_by_distance()
+    elif args.periods:
+        return shotchart.process_shots_by_period()
+    elif args.breakdown:
+        return shotchart.process_shots_by_breakdown()
     elif args.zones:
-        return shotchart.process_shots_by_zones(shotchart_df)
+        return shotchart.process_shots_by_zones()
     else:
         return None

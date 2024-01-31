@@ -143,7 +143,7 @@ def plot_data_pie(shots_dict: dict, categories: list, title: str=None):
     plt.show()
 
 
-def plot_shot_category(shots_dict: dict, category: str, xlabel: str=None, ylabel: str=None, title: str=None):
+def plot_shot_category(shots_dict: ShotChart, category: str, xlabel: str=None, ylabel: str=None, title: str=None):
     """Plot shot data for a specific category.
 
     Parameters:
