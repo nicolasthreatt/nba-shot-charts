@@ -1,24 +1,28 @@
 import argparse
+from datetime import datetime
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from classes.shotchart import ShotChart
 from enums.court_dimensions import CourtDimensions
 from matplotlib.patches import Circle, Rectangle, Arc
+from plots import determine_plot
 
 
-def generate_title(shotchart_df: pd.DataFrame, args: argparse.Namespace):
-    """Generate title for shot data display.
+def generate_title(shotchart_df: pd.DataFrame, args: argparse.Namespace) -> str:
+    """Generate a title for the shot chart based on the DataFrame and arguments.
 
     Args:
         shotchart_df (pd.DataFrame): DataFrame containing shot chart data.
-        args: Arguments controlling the display.
+        args (argparse.Namespace): Arguments controlling the generation of the title.
 
     Returns:
-        str: Generated title.
+        str: The generated title.
     """
-    title = shotchart_df.iloc[0]['PLAYER_NAME'] if args.player else shotchart_df.iloc[0]['TEAM_NAME']
-    title += ' - ' + shotchart_df.iloc[0]['HTM'] + ' vs.' + shotchart_df.iloc[0]['VTM'] + ' on ' + shotchart_df.game_date.strftime('%m/%d/%Y')
+    title = args.player + ' - ' + (args.team_abr or args.team_nickname)
+    if 'GAME_DATE' in shotchart_df.columns:
+        game_date = datetime.strptime(str(shotchart_df.iloc[0]['GAME_DATE']), '%Y%m%d')
+        title += ' - ' + game_date.strftime('%m/%d/%Y')
     return title
 
 
@@ -31,9 +35,9 @@ def display_shot_data(shotchart_df: pd.DataFrame, processed_data, args: argparse
         args: Arguments controlling the display.
     """
     if shotchart_df is not None:
-        title = generate_title(shotchart_df, args)
+        # title = generate_title(shotchart_df, args)
         determine_plot(shotchart_df, args.plot_type, plot_data=args.plot_data,
-                       title=title, xlabel=get_xlabel(args), ylabel=get_ylabel(args))
+                       title="TITLE") # , xlabel=get_xlabel(args), ylabel=get_ylabel(args)
     else:
         exit("No data to display.")
 

@@ -26,4 +26,4 @@ if __name__ == "__main__":
 
         processed_data = process_shot_data(shotchart, shotchart_df, args)
         print(processed_data)
-        display_shot_data(shotchart_df, processed_data, args)
+        display_shot_data(shotchart, processed_data, args)

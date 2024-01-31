@@ -16,8 +16,8 @@ def plot_shotchart(shotchart: ShotChart, title: str, zones: bool=False):
     """
     # Create Figure and plot makes/misses
     plt.figure(figsize=(12,11))
-    plt.scatter(shotchart.shots_made.LOC_X, shotchart.shots_made.LOC_Y, marker='o', color='green',s=200)
-    plt.scatter(shotchart.shots_missed.LOC_X, shotchart.shots_missed.LOC_Y, marker='x', color='red', s=200)
+    plt.scatter(shotchart.shots_missed.LOC_X, shotchart.shots_missed.LOC_Y, marker='o', color='green',s=200)
+    plt.scatter(shotchart.shots_made.LOC_X, shotchart.shots_made.LOC_Y, marker='x', color='red', s=200)
 
     # Create axis
     ax = plt.gca()

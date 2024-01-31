@@ -26,8 +26,8 @@ class ShotChart:
         field_goal_keys = ["made", "missed", "attempted", "percent", "frequency"]
 
         # Shot Points ShotChart Members
-        self.shots_missed = 0
-        self.shots_made = 0       
+        self.shots_missed = {}
+        self.shots_made = {}
         self.two_points = dict.fromkeys(field_goal_keys, 0)
         self.three_points = dict.fromkeys(field_goal_keys, 0)
         self.total_points = dict.fromkeys(field_goal_keys, 0)
@@ -66,7 +66,6 @@ class ShotChart:
 
             # Game Date
             self.game_date = datetime.strptime(str(shotchart_df.iloc[0]['GAME_DATE']),'%Y%m%d')
-            print(shotchart_df[["SHOT_TYPE", "EVENT_TYPE", "ACTION_TYPE", "SHOT_ZONE_RANGE"]])
 
             # Process shot statistics if corresponding flags are True
             if points:
