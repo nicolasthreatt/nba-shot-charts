@@ -25,7 +25,7 @@ def get_xlabel(args: argparse.Namespace) -> str:
     elif args.distances:
         return "Shot Distance (Feet)"
     elif args.periods:
-        return "Shot Period"
+        return "Shot Periods"
     elif args.breakdown:
         return "Shot Breakdowns"
     else:
@@ -75,7 +75,6 @@ def display_shot_data(shotchart: ShotChart, args: argparse.Namespace):
         title = generate_title(shotchart, args)
         x_label = get_xlabel(args)
         y_label = get_ylabel(args)
-        # print(shotchart.shot_chart_data[x_label.split(' ')[1].lower()])
         determine_plot(shotchart.shot_chart_data[x_label.split(' ')[1].lower()], args.plot_type, plot_data=args.plot_data,
                        title=title, xlabel=x_label, ylabel=y_label)
     else:

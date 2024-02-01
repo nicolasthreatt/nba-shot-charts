@@ -291,7 +291,7 @@ class ShotChart:
         # return self.shot_periods
 
 
-    def process_shots_by_mode(self, shots_dict: dict, mode: str):
+    def process_shots_by_mode(self, shots_dict: dict, df, mode: str):
         """Process shot statistics based on the specified mode and update the provided dictionary.
 
         Args:
@@ -301,7 +301,7 @@ class ShotChart:
                 - "distance": Shot distance.
                 - "breakdown": Detailed shot type breakdown.
         """
-        for index, row in self.df.iterrows():
+        for index, row in df.iterrows():
             if mode == "type":  # Shot Type (2Pt vs 3Pt)
                 shot_type, event_type, action_type = row[:3]
                 if "Layup" in action_type:

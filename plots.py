@@ -272,10 +272,10 @@ def determine_plot(shots_data: dict, plot_type: str, zones: bool=None, plot_data
             if plot_data and len(plot_data) == 2:
                 plot_shot_categories(shots_data, plot_data[0], plot_data[1], xlabel=xlabel, title=title)
         case 'pie':
-            if plot_data:
+            if plot_data and len(plot_data) == 1:
                 plot_data_pie(shots_data, plot_data, title=title)
         case 'line':
-            if plot_data:
+            if plot_data and "Period" in xlabel:
                 plot_data_line(shots_data, plot_data, xlabel=xlabel, ylabel=ylabel, title=title)
         case _:
             exit("No shotchart data to plot")
